@@ -1,0 +1,27 @@
+<resources>
+    <!--
+    <string-array name="cameraSize_entries">
+        <item>Full</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>1:1</item>
+    </string-array>
+
+    <string-array name="cameraSize_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    -->
+
+    <string-array name="cameraNo_entries">
+        <item>BackCam</item>
+        <item>FrontCam</item>
+    </string-array>
+
+    <string-array name="cameraNo_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+</resources>

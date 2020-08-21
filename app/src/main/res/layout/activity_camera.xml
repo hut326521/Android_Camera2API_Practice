@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="#000000">
+
+
+	<SurfaceView
+		android:id="@+id/CameraPreviewSurfaceView"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_alignParentTop="true"
+		android:layout_marginTop="0dp" />
+
+	<Button
+		android:id="@+id/toPreferenceButton"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignParentStart="true"
+		android:layout_alignParentBottom="true"
+		android:layout_marginStart="20dp"
+		android:layout_marginBottom="67dp"
+		android:text="@string/pref" />
+
+	<TextView
+		android:id="@+id/CamDetailView"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignParentTop="true"
+		android:layout_alignParentEnd="true"
+		android:layout_marginTop="57dp"
+		android:layout_marginEnd="71dp"
+		android:text="@string/textview"
+		android:textColor="#F44336"
+		android:textSize="18sp"
+		android:textStyle="bold"
+		tools:ignore="RelativeOverlap" />
+
+	<Button
+		android:id="@+id/SwitchCamButton"
+		android:layout_width="48dp"
+		android:layout_height="wrap_content"
+		android:layout_alignParentBottom="true"
+		android:layout_marginStart="22dp"
+		android:layout_marginBottom="65dp"
+		android:layout_toEndOf="@+id/toPreferenceButton"
+		android:text="@string/SwitchCamera" />
+
+	<ImageButton
+		android:id="@+id/CameraImageButton"
+		android:layout_width="55dp"
+		android:layout_height="52dp"
+		android:layout_alignParentBottom="true"
+		android:layout_marginStart="30dp"
+		android:layout_marginBottom="64dp"
+		android:layout_toEndOf="@+id/SwitchCamButton"
+		android:background="@android:drawable/presence_invisible"
+		android:contentDescription="@string/todo"
+		app:srcCompat="@android:drawable/presence_invisible" />
+
+	<ImageButton
+		android:id="@+id/toGalleryImageButton"
+		android:layout_width="64dp"
+		android:layout_height="64dp"
+		android:layout_alignParentBottom="true"
+		android:layout_marginStart="61dp"
+		android:layout_marginBottom="57dp"
+		android:layout_toEndOf="@+id/CameraImageButton"
+		android:adjustViewBounds="true"
+		android:contentDescription="@string/todo"
+		android:scaleType="fitXY"
+		app:srcCompat="?android:attr/galleryItemBackground" />
+
+
+</RelativeLayout>
