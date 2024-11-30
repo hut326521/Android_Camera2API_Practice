@@ -3,10 +3,16 @@
     package="com.example.mikecamerapractice">
 
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>
+
+<!--    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>-->
+<!--    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>-->
     <uses-permission android:name="android.permission.VIBRATE" />
+<!--    -->
+<!--    <uses-permission android:name="com.oneplus.camera.CAMERA_SERVICE" />-->
+
+
 
     <application
         android:allowBackup="false"

@@ -16,6 +16,7 @@ import android.hardware.camera2.params.SessionConfiguration
 import android.icu.text.SimpleDateFormat
 import android.media.Image
 import android.media.ImageReader
+import android.media.MediaRecorder
 import android.net.Uri
 import android.os.*
 import android.os.VibrationEffect.*
@@ -26,13 +27,13 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.View
-import android.widget.Gallery
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import kotlinx.android.synthetic.main.activity_camera.*
+import java.io.File
 import java.io.FileDescriptor
 import java.io.IOException
 import java.io.OutputStream
@@ -70,6 +71,9 @@ class CameraActivity : Activity() {
     private var myImageWaitingArrayList: Queue<CustomImageObject> = LinkedList<CustomImageObject>()
     private var countNowBuffer = 0
     private var isTakingBurstPic = false
+    private val mMediaRecorder = MediaRecorder()
+    private lateinit var mVideoFolder: File
+    private lateinit var mVideoFileName: String
 
     /** Extended Function */
     private fun Date.getNowDateTime(): String {
@@ -143,7 +147,9 @@ class CameraActivity : Activity() {
                         { toProcessAndSavingPic(it) },
                         cameraHandlerForSaving
                     )
-                    startPreview()
+                    createVideoFileName()
+                    setupMediaRecorder()
+                    createSession()
                     myThreadLock.unlock()
                 }
             }
@@ -187,9 +193,7 @@ class CameraActivity : Activity() {
             toGallery()
         }
 
-        //toGalleryImageButton.setImageResource()
-
-
+        createVideoFolder()
     }
 
     /** Function of Switch Camera Button*/
@@ -206,6 +210,36 @@ class CameraActivity : Activity() {
         {
             putString("cameraID", newCamID)
             apply()
+        }
+    }
+
+    private fun setupMediaRecorder() {
+        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        mMediaRecorder.setOutputFile(mVideoFileName)
+        mMediaRecorder.setVideoEncodingBitRate(1000000)
+        mMediaRecorder.setVideoFrameRate(30)
+        mMediaRecorder.setVideoSize(finalPreviewSizeWidth, finalPreviewSizeHeight)
+        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.HEVC)
+        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        mMediaRecorder.prepare()
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun createVideoFileName(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val pretend: String = "VIDEO_" + timeStamp + "_"
+        val videoFile: File = File.createTempFile(pretend, ".mp4", mVideoFolder)
+        mVideoFileName = videoFile.absolutePath
+        return videoFile
+    }
+
+    private fun createVideoFolder() {
+        val movieFile: File = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        mVideoFolder = File(movieFile, "Camera2VideoImage")
+        if (!mVideoFolder.exists()) {
+            mVideoFolder.mkdirs()
         }
     }
 
@@ -340,10 +374,11 @@ class CameraActivity : Activity() {
     }
 
     /** 開啟相機Preview */
-    private fun startPreview() {
+    private fun createSession() {
         Log.w("CameraTestFlow", "Start Preview")
         val previewSurface = CameraPreviewSurfaceView.holder.surface
-        val recordingSurface = myImageReader.surface
+        val captureSurface = myImageReader.surface
+        //val recordingSurface = mMediaRecorder.surface
         val stateCallback =
             object : CameraCaptureSession.StateCallback() {
                 override fun onConfigureFailed(session: CameraCaptureSession) {
@@ -352,13 +387,7 @@ class CameraActivity : Activity() {
 
                 override fun onConfigured(session: CameraCaptureSession) {
                     mySession = session
-                    myBuilderFactory(1)?.build()?.let {
-                        session.setRepeatingRequest(
-                            it,
-                            object : CameraCaptureSession.CaptureCallback() {},
-                            null
-                        )
-                    }
+                    startPreview()
                 }
 
                 override fun onClosed(session: CameraCaptureSession) {
@@ -373,10 +402,11 @@ class CameraActivity : Activity() {
                 }
             }
         val previewOC = OutputConfiguration(previewSurface)
-        val recordOC = OutputConfiguration(recordingSurface)
+        val captureOC = OutputConfiguration(captureSurface)
+        //val recordOC = OutputConfiguration(recordingSurface)
         val sessionConfig = SessionConfiguration(
             SessionConfiguration.SESSION_REGULAR,
-            mutableListOf(previewOC, recordOC),
+            mutableListOf(previewOC, captureOC),
             Executor
             {
                 cameraHandler?.post(it)
@@ -384,8 +414,16 @@ class CameraActivity : Activity() {
             stateCallback
         )
         myCameraDevice?.createCaptureSession(sessionConfig)
+    }
 
-
+    private fun startPreview() {
+        getBuilderFactory(1)?.build()?.let {
+            mySession?.setRepeatingRequest(
+                it,
+                object : CameraCaptureSession.CaptureCallback() {},
+                null
+            )
+        }
     }
 
     /** 抓取目前設定之Preview Size並設定SurfaceView*/
@@ -505,7 +543,7 @@ class CameraActivity : Activity() {
         isTakingPic = true
         endBurstSignal = false
         getVibrator().vibrate(createOneShot(50, 255))
-        myBuilderFactory(0)?.build()?.let {
+        getBuilderFactory(0)?.build()?.let {
             mySession?.capture(
                 it,
                 object : CameraCaptureSession.CaptureCallback() {
@@ -558,7 +596,7 @@ class CameraActivity : Activity() {
         countMaxBurst = 0
         isTakingPic = true
         endBurstSignal = false
-        myBuilderFactory(2)?.build()?.let {
+        getBuilderFactory(2)?.build()?.let {
             mySession?.setRepeatingBurst(
                 mutableListOf(it),
                 object : CameraCaptureSession.CaptureCallback() {
@@ -899,7 +937,7 @@ class CameraActivity : Activity() {
     }
 
 
-    private fun myBuilderFactory(mode: Int): CaptureRequest.Builder? {
+    private fun getBuilderFactory(mode: Int): CaptureRequest.Builder? {
         val myCameraDeviceHere = myCameraDevice
         if (myCameraDeviceHere != null) {
             when (mode) {
@@ -982,6 +1020,7 @@ class CameraActivity : Activity() {
         private const val CAMERA_PERMISSION = Manifest.permission.CAMERA
         private const val writeStorage_PERMISSION = Manifest.permission.WRITE_EXTERNAL_STORAGE
         private const val readStorage_PERMISSION = Manifest.permission.READ_EXTERNAL_STORAGE
+        private const val RECORDING_PERMISSION = Manifest.permission.RECORD_AUDIO
 
         //Check to see we have the necessary permissions for this app.
         fun hasCameraPermission(activity: Activity): Boolean {
@@ -997,15 +1036,21 @@ class CameraActivity : Activity() {
                 activity,
                 readStorage_PERMISSION
             ) == PackageManager.PERMISSION_GRANTED
+            val recordingPermission = ContextCompat.checkSelfPermission(
+                activity,
+                RECORDING_PERMISSION
+            ) == PackageManager.PERMISSION_GRANTED
 
-            return (cameraPermission or writeStoragePermission or readStoragePermission)
+
+
+            return (cameraPermission or writeStoragePermission or readStoragePermission or recordingPermission)
         }
 
         //Check to see we have the necessary permissions for this app, and ask for them if we don't.
         fun requestCameraPermission(activity: Activity) {
             ActivityCompat.requestPermissions(
                 activity,
-                arrayOf(CAMERA_PERMISSION, writeStorage_PERMISSION, readStorage_PERMISSION),
+                arrayOf(CAMERA_PERMISSION, writeStorage_PERMISSION, readStorage_PERMISSION, RECORDING_PERMISSION),
                 allCamera_PERMISSION_CODE
             )
         }
